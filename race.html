@@ -1,0 +1,176 @@
+Dor4
+Dima Vaisman
+​אתה​
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dor Weissman - Mega Race</title>
+<style>
+body { margin: 0; overflow: hidden; background: #222; font-family: Arial, sans-serif; }
+canvas { display: block; background: #555; margin: 0 auto; border: 5px solid #fff; }
+#ui { position: absolute; top: 10px; left: 10px; color: white; text-shadow: 2px 2px #000; }
+#shop { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+background: rgba(0,0,0,0.9); padding: 20px; color: white; display: none; text-align: center; border: 3px solid gold; }
+button { padding: 10px 20px; font-size: 18px; cursor: pointer; margin: 5px; }
+</style>
+</head>
+<body>
+
+<div id="ui">
+<h2 id="levelTxt">שלב: 1</h2>
+<h3 id="worldTxt">עולם: סוכריות</h3>
+<h3 id="coinsTxt">מטבעות: 0</h3>
+</div>
+
+<div id="shop">
+<h1>ניצחת בשלב! חנות שדרוגים</h1>
+<p>יש לך <span id="shopCoins">0</span> מטבעות</p>
+<button onclick="upgradeSpeed()">שדרג מהירות (10 מטבעות)</button>
+<button onclick="changeColor()">שנה צבע רכב (5 מטבעות)</button>
+<br><br>
+<button onclick="nextLevel()" style="background: green; color: white;">לשלב הבא!</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = 500;
+canvas.height = 700;
+
+// משתני משחק
+let level = 1;
+let coins = 0;
+let carSpeed = 5;
+let carColor = "lime"
+let world = "Candy"
+let gameRunning = true;
+
+const worlds = ["סוכריות", "כלבי פודל טוי", "נשקים", "מכשולים", "הגיהנום"];
+const worldColors = ["#ffb6c1", "#d2b48c", "#444", "#8b0000", "#000"];
+
+let player = { x: 225, y: 600, w: 50, h: 80 };
+let missiles = [];
+let frame = 0;
+
+// פונקציית עדכון עולם
+function updateWorld() {
+let index = Math.floor((level-1) / 10);
+world = worlds[index];
+document.getElementById("worldTxt").innerText = "עולם: " + world;
+canvas.style.background = worldColors[index];
+}
+
+function drawPlayer() {
+ctx.fillStyle = carColor;
+ctx.fillRect(player.x, player.y, player.w, player.h);
+// עיצוב לרכב (גלגלים)
+ctx.fillStyle = "black"
+ctx.fillRect(player.x-5, player.y+10, 5, 20);
+ctx.fillRect(player.x+player.w, player.y+10, 5, 20);
+ctx.fillRect(player.x-5, player.y+50, 5, 20);
+ctx.fillRect(player.x+player.w, player.y+50, 5, 20);
+// מספר השלב על הרכב
+ctx.fillStyle = "white"
+ctx.font = "20px Arial"
+ctx.fillText(level, player.x + 15, player.y + 45);
+}
+
+function spawnMissile() {
+if (frame % (Math.max(10, 40 - level)) === 0) {
+missiles.push({
+x: Math.random() * (canvas.width - 20),
+y: -50,
+w: 15,
+h: 30,
+speed: 5 + (level * 0.2)
+});
+}
+}
+
+function update() {
+if (!gameRunning) return;
+
+frame++;
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+drawPlayer();
+spawnMissile();
+
+missiles.forEach((m, index) => {
+m.y += m.speed;
+ctx.fillStyle = "red"
+ctx.fillRect(m.x, m.y, m.w, m.h);
+
+// בדיקת התנגשות
+if (m.x < player.x + player.w && m.x + m.w > player.x &&
+m.y < player.y + player.h && m.y + m.h > player.y) {
+alert("הפסדת! הטילים ניצחו.");
+location.reload();
+}
+
+if (m.y > canvas.height) missiles.splice(index, 1);
+});
+
+// בדיקת ניצחון בשלב (אחרי 500 פריימים)
+if (frame > 500) {
+winLevel();
+}
+
+requestAnimationFrame(update);
+}
+
+function winLevel() {
+gameRunning = false;
+coins += 20;
+document.getElementById("shopCoins").innerText = coins;
+document.getElementById("shop").style.display = "block"
+}
+
+function nextLevel() {
+level++;
+if (level > 50) {
+alert("ניצחת את כל 50 השלבים! אתה אלוף!");
+level = 1;
+}
+document.getElementById("levelTxt").innerText = "שלב: " + level;
+updateWorld();
+missiles = [];
+frame = 0;
+gameRunning = true;
+document.getElementById("shop").style.display = "none"
+update();
+}
+
+// שדרוגים
+function upgradeSpeed() {
+if (coins >= 10) {
+coins -= 10;
+carSpeed += 2;
+document.getElementById("shopCoins").innerText = coins;
+document.getElementById("coinsTxt").innerText = "מטבעות: " + coins;
+}
+}
+
+function changeColor() {
+if (coins >= 5) {
+coins -= 5;
+const colors = ["cyan", "yellow", "orange", "magenta", "white"];
+carColor = colors[Math.floor(Math.random() * colors.length)];
+document.getElementById("shopCoins").innerText = coins;
+document.getElementById("coinsTxt").innerText = "מטבעות: " + coins;
+}
+}
+
+// שליטה
+window.addEventListener("keydown", (e) => {
+if (e.key === "ArrowLeft" && player.x > 0) player.x -= carSpeed;
+if (e.key === "ArrowRight" && player.x < canvas.width - player.w) player.x += carSpeed;
+});
+
+updateWorld();
+update();
+</script>
+
+</body>
+</html>
